@@ -1,60 +1,114 @@
 # MiniCode
 
-[English](./README.md) | [架构说明](./ARCHITECTURE_ZH.md) | [贡献规范](./CONTRIBUTING_ZH.md) | [路线图](./ROADMAP_ZH.md) | [通过 MiniCode 学习 Claude Code 设计](./CLAUDE_CODE_PATTERNS_ZH.md) | [License](./LICENSE)
+<p align="center">
+  <img src="./docs/logo.svg" alt="MiniCode Logo" width="180" />
+</p>
 
-一个面向本地开发工作流的轻量级终端编码助手。
+<h2 align="center">MiniCode Go</h2>
 
-MiniCode 用更小的实现体量，提供了类 Claude Code 的工作流体验和架构思路，因此非常适合学习、实验，以及继续做自己的定制化开发。
+<p align="center">
+  <img src="https://img.shields.io/badge/Language-Go-00ADD8?style=for-the-badge" alt="Language: Go" />
+  <img src="https://img.shields.io/badge/UI-Terminal%20TUI-1A1918?style=for-the-badge" alt="Terminal TUI" />
+  <img src="https://img.shields.io/badge/Agent-Model%20Tool%20Loop-D97757?style=for-the-badge" alt="Model Tool Loop" />
+  <img src="https://img.shields.io/badge/MCP-Skills%20Ready-B85C3F?style=for-the-badge" alt="MCP Skills Ready" />
+</p>
 
-## 项目简介
+---
 
-MiniCode 围绕一个实用的 terminal-first agent loop 构建：
+<p align="center">
+  一个以 Go 版本为主线、保留 TypeScript 对照学习价值的轻量级终端 Coding Agent。
+</p>
 
-- 接收用户请求
-- 检查当前工作区
-- 在需要时调用工具
-- 修改文件前先 review
-- 在同一个终端会话里返回最终结果
+[中文首页](./README.md) | [详细 Go 架构文档](./README_GO.md) | [学习指南](./docs/LEARNING_GUIDE_ZH.md) | [Architecture](./ARCHITECTURE.md) | [Contributing](./CONTRIBUTING.md) | [Roadmap](./ROADMAP.md) | [License](./LICENSE)
 
-整个项目有意保持紧凑，这样主控制流、工具模型和 TUI 行为都更容易理解和扩展。
+MiniCode 是一个面向本地开发工作流的终端编码助手。它保留了 Claude Code 一类产品最核心的执行闭环，但刻意把项目体量控制在容易阅读、容易修改、容易实验的范围内。
 
-## 目录
+当前这个仓库有两条学习价值很高的主线：
 
-- [为什么选择 MiniCode](#为什么选择-minicode)
-- [功能特性](#功能特性)
-- [安装](#安装)
-- [快速开始](#快速开始)
-- [命令](#命令)
-- [配置](#配置)
-- [Skills 与 MCP 用法](#skills-与-mcp-用法)
-- [Star 趋势](#star-趋势)
-- [项目结构](#项目结构)
-- [架构文档](#架构文档)
-- [贡献规范](#贡献规范)
-- [路线图](#路线图)
-- [通过 MiniCode 学习 Claude Code 设计](#通过-minicode-学习-claude-code-设计)
-- [开发说明](#开发说明)
+- `TypeScript` 版本提供最初的产品形态和交互心智
+- `Go` 版本提供一套更完整、更工程化、可持续扩展的实现
 
-## 为什么选择 MiniCode
+如果你想学习终端 Agent 产品怎么从“能跑”变成“可维护、可测试、可开源”，这个仓库很适合作为样本。
 
-如果你希望得到下面这些东西，MiniCode 会很合适：
+## 项目定位
 
-- 一个轻量级 coding assistant，而不是庞大的平台
-- 一个带 tool calling、transcript 和命令工作流的终端 UI
-- 一个很适合阅读和二次开发的小代码库
-- 一个可用于学习类 Claude Code agent 架构的参考实现
+MiniCode 解决的是一个非常具体的问题：
 
-## 功能特性
+1. 在终端中接收用户请求
+2. 把用户请求、系统提示词、上下文和工具定义发给模型
+3. 当模型决定需要工具时，调用本地工具或 MCP 工具
+4. 在文件修改、命令执行、路径访问前做安全控制
+5. 将工具结果送回模型继续推理
+6. 在同一会话中返回最终答复
 
-### 核心工作流
+它的核心运行心智只有一条主线：
 
-- 单轮支持多步工具执行
-- `model -> tool -> model` 闭环
-- 全屏终端交互界面
-- 输入历史、transcript 滚动和 slash 命令菜单
-- 支持通过 `SKILL.md` 发现本地 skills
-- 支持通过 stdio 动态加载 MCP tools
-- 支持通过通用 MCP helper tools 访问 resources 和 prompts
+```text
+用户输入
+  -> 模型
+  -> 工具调用
+  -> 工具结果
+  -> 模型继续
+  -> 最终回答
+```
+
+也就是这个仓库里最关键的 `model -> tool -> model` agent loop。
+
+## 为什么值得学习
+
+MiniCode 适合下面这几类读者：
+
+- 想理解 Claude Code 类产品最小可行架构的人
+- 想学习 tool calling、session、权限控制、MCP、TUI 如何落地的人
+- 想要一个比大型框架更容易改造的参考实现的人
+- 想同时对比 TypeScript 与 Go 两种工程组织方式的人
+
+它的优势不在“功能最多”，而在“路径清晰”：
+
+- 主循环短，容易看懂
+- 模块边界明确，方便替换
+- 有真实的权限与 diff review 约束，不是纯 demo
+- Go 版覆盖了更多测试和运行时边界
+
+## Go 版本比 TS 版本多了什么
+
+Go 版不是把 TS 版逐行翻译一遍，而是在功能对齐的基础上往前走了一步。
+
+### 产品能力增强
+
+- 支持 `Anthropic-compatible` 和 `OpenAI-compatible` 两类 provider
+- 支持完整会话持久化，包含 `sessions list`、`--resume latest`、`--resume <id>`
+- 支持交互式和非交互式 `install-local`
+- TUI 与普通行模式双入口，适配不同终端环境
+
+### 架构和稳定性增强
+
+- MCP 客户端有完整的 request id 跟踪、超时恢复和 pending request 清理
+- 工具输入支持 JSON Schema 子集校验
+- 缺配置时明确报错，而不是隐式 fallback 到 mock
+- Agent loop 对 progress、clarification、pause turn、空响应重试等边界做了更细处理
+
+### 工程化增强
+
+- 包划分更清晰，模块职责更稳定
+- Go 单元测试和 race 检查覆盖更多关键路径
+- TUI 视觉、折叠、宽字符宽度处理更完整
+
+### TS 版本仍然有价值的地方
+
+- 更接近最初的产品原型形态
+- 更适合初次理解整个产品概念
+- 是 Go 版对齐与增强的参考对象
+
+## 核心能力
+
+### Agent 核心闭环
+
+- 单轮内多步工具调用
+- 模型和工具交替执行
+- progress 与 final 分离
+- 澄清问题会中断执行并等待用户输入
+- 工具结果会回灌给模型继续推理
 
 ### 内置工具
 
@@ -62,9 +116,9 @@ MiniCode 围绕一个实用的 terminal-first agent loop 构建：
 - `grep_files`
 - `read_file`
 - `write_file`
+- `modify_file`
 - `edit_file`
 - `patch_file`
-- `modify_file`
 - `run_command`
 - `load_skill`
 - `list_mcp_resources`
@@ -72,343 +126,314 @@ MiniCode 围绕一个实用的 terminal-first agent loop 构建：
 - `list_mcp_prompts`
 - `get_mcp_prompt`
 
-### 安全性与可用性
+### 扩展能力
 
-- 文件修改前先 review diff
-- 路径和命令权限检查
-- 独立配置目录和交互式安装器
-- 支持 Anthropic 风格接口
+- 通过 `SKILL.md` 发现本地 skills
+- 通过 MCP 动态注册外部工具
+- 支持 MCP resources 和 prompts
+- 支持按项目加载配置与扩展
 
-### 最近交互改进
+### 安全边界
 
-- 审批对话支持上下键选择与 Enter 确认（不再依赖字母键）
-- 支持“拒绝并给模型反馈”，可直接把修正建议发回模型
-- 编辑审批支持“本轮允许此文件”与“本轮允许全部编辑”
-- diff 预览改为标准 unified diff（更接近 `git diff`）
-- 审批页面支持 `Ctrl+O` 展开/收起与滚轮/分页滚动
-- 工具调用结果自动折叠为摘要，减少 transcript 噪音
+- 路径访问权限检查
+- 危险命令识别
+- 写文件前 diff review
+- 审批拒绝时可把反馈再发回模型
+- 支持本轮临时授权和更细粒度的编辑允许范围
 
-## 安装
+### 终端体验
 
-```bash
-cd mini-code
-npm install
-npm run install-local
-```
+- 全屏 TUI
+- transcript 折叠
+- 输入历史
+- slash 命令菜单
+- diff 高亮
+- 宽字符和 emoji 宽度处理
 
-安装器会询问：
+## 快速启动
 
-- 模型名称
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_AUTH_TOKEN`
-
-配置保存在：
-
-- `~/.mini-code/settings.json`
-- `~/.mini-code/mcp.json`
-
-启动命令安装到：
-
-- `~/.local/bin/minicode`
-
-如果 `~/.local/bin` 不在你的 `PATH` 中，可以添加：
+进入项目目录：
 
 ```bash
-export PATH="$HOME/.local/bin:$PATH"
+cd /Users/shengbo.sun/Documents/Codex/2026-05-21/https-github-com-ssbsunshengbo-minicode-git/MiniCode
 ```
 
-## 快速开始
+### 1. 直接体验 Go 版 mock 模式
 
-运行安装后的命令：
+```bash
+MINI_CODE_MODEL_MODE=mock go run ./cmd/minicode
+```
+
+适合用来：
+
+- 验证项目能否启动
+- 查看 TUI 或普通行模式
+- 体验 slash commands
+- 演示工具链路
+
+### 2. 使用 Anthropic-compatible provider
+
+```bash
+export ANTHROPIC_MODEL=claude-sonnet-4-5
+export ANTHROPIC_AUTH_TOKEN=your-token
+go run ./cmd/minicode
+```
+
+可选：
+
+```bash
+export ANTHROPIC_BASE_URL=https://api.anthropic.com
+```
+
+### 3. 使用 OpenAI-compatible provider
+
+```bash
+export MINI_CODE_PROVIDER=openai
+export OPENAI_MODEL=gpt-4.1
+export OPENAI_API_KEY=your-key
+go run ./cmd/minicode
+```
+
+可选：
+
+```bash
+export OPENAI_BASE_URL=https://api.openai.com
+```
+
+### 4. 本地安装启动器
+
+```bash
+go run ./cmd/minicode install-local
+```
+
+安装完成后可直接运行：
 
 ```bash
 minicode
 ```
 
-本地开发模式：
+## 如何测试和使用
+
+### 基础测试
 
 ```bash
-npm run dev
+go test ./...
+go vet ./...
 ```
 
-离线演示模式：
+### 重点 race 检查
 
 ```bash
-MINI_CODE_MODEL_MODE=mock npm run dev
+go test -race ./internal/agent ./internal/session ./internal/tui ./internal/model ./internal/tools ./internal/mcp ./internal/permissions
 ```
 
-## 命令
-
-### 管理命令
-
-- `minicode mcp list`
-- `minicode mcp add <name> [--project] [--protocol <mode>] [--env KEY=VALUE ...] -- <command> [args...]`
-- `minicode mcp remove <name> [--project]`
-- `minicode skills list`
-- `minicode skills add <path> [--name <name>] [--project]`
-- `minicode skills remove <name> [--project]`
-
-### 本地 slash 命令
-
-- `/help`
-- `/tools`
-- `/skills`
-- `/mcp`
-- `/status`
-- `/model`
-- `/model <name>`
-- `/config-paths`
-
-### 终端交互能力
-
-- 命令提示与 slash 菜单
-- transcript 滚动
-- 输入编辑
-- 历史输入导航
-- 审批界面上下键选择与反馈输入
-
-## 配置
-
-配置示例：
-
-```json
-{
-  "model": "your-model-name",
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
-    }
-  },
-  "env": {
-    "ANTHROPIC_BASE_URL": "https://api.anthropic.com",
-    "ANTHROPIC_AUTH_TOKEN": "your-token",
-    "ANTHROPIC_MODEL": "your-model-name"
-  }
-}
-```
-
-也支持 Claude Code 风格的项目级 `.mcp.json`：
-
-```json
-{
-  "mcpServers": {
-    "filesystem": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
-    }
-  }
-}
-```
-
-为了兼容不同厂商的 MCP 实现，MiniCode 现在会自动协商 stdio framing：
-
-- 默认先尝试标准 MCP 的 `Content-Length` framing
-- 如果失败，再自动回退到按行分隔的 JSON
-- 也可以在单个 server 上通过 `"protocol": "content-length"` 或 `"protocol": "newline-json"` 强制指定
-
-Skills 默认会从这些位置发现：
-
-- `./.mini-code/skills/<skill-name>/SKILL.md`
-- `~/.mini-code/skills/<skill-name>/SKILL.md`
-- `./.claude/skills/<skill-name>/SKILL.md`
-- `~/.claude/skills/<skill-name>/SKILL.md`
-
-配置优先级：
-
-1. `~/.mini-code/settings.json`
-2. `~/.mini-code/mcp.json`
-3. 项目级 `.mcp.json`
-4. 兼容的本地已有配置
-5. 当前进程环境变量
-
-## Skills 与 MCP 用法
-
-MiniCode 现在支持两类扩展：
-
-- `skills`：本地工作流说明，一般由一个 `SKILL.md` 描述如何完成某类任务
-- `MCP`：外部工具源，启动后会把远端 server 暴露的 tools / resources / prompts 接入 MiniCode
-
-### Skills：安装、查看、触发
-
-安装一个本地 skill：
+### TypeScript 侧基础检查
 
 ```bash
-minicode skills add ~/minimax-skills/skills/frontend-dev --name frontend-dev
-```
-
-查看已发现的 skills：
-
-```bash
-minicode skills list
-```
-
-进入交互界面后，也可以用：
-
-```text
-/skills
-```
-
-来检查当前会话里可用的 skills。
-
-如果你明确提到 skill 名，MiniCode 会优先加载它。比如：
-
-```text
-请使用 frontend-dev skill，直接重构当前 landing page，不要只停在方案说明。
-```
-
-也可以更明确地要求先读 skill：
-
-```text
-先加载 fullstack-dev skill，再根据这个 skill 的工作流实现当前需求。
-```
-
-一个常见用法是把官方或兼容 Claude Code 的 skills 仓库 clone 到本地后再安装：
-
-```bash
-git clone https://github.com/MiniMax-AI/skills.git ~/minimax-skills
-minicode skills add ~/minimax-skills/skills/frontend-dev --name frontend-dev
-```
-
-### MCP：安装、查看、触发
-
-安装一个用户级 MCP server：
-
-```bash
-minicode mcp add MiniMax --env MINIMAX_API_KEY=your-key --env MINIMAX_API_HOST=https://api.minimaxi.com -- uvx minimax-coding-plan-mcp -y
-```
-
-查看当前已配置的 MCP：
-
-```bash
-minicode mcp list
-```
-
-如果你想只给当前项目配置 MCP，可以加 `--project`：
-
-```bash
-minicode mcp add filesystem --project -- npx -y @modelcontextprotocol/server-filesystem .
-minicode mcp list --project
-```
-
-进入交互界面后，可以用：
-
-```text
-/mcp
-```
-
-查看当前会话里哪些 server 已连接、用了什么协议、暴露了多少 tools / resources / prompts。
-
-MCP tools 会自动注册成：
-
-```text
-mcp__<server_name>__<tool_name>
-```
-
-例如安装 MiniMax MCP 后，你可能会看到：
-
-- `mcp__minimax__web_search`
-- `mcp__minimax__understand_image`
-
-这些工具不需要手动声明，server 连接成功后会自动出现在工具列表中。
-
-### 在对话里怎么用
-
-最简单的方式是直接自然语言描述需求，让模型自己决定是否调用 skill 或 MCP tool：
-
-```text
-搜索一下最近关于 MCP 的中文资料，给我 5 条有代表性的链接。
-```
-
-如果当前已连接 MiniMax MCP，模型通常会自动选择 `mcp__minimax__web_search`。
-
-如果你想更稳一些，可以把 skill 或目标写清楚：
-
-```text
-请使用 frontend-dev skill，直接修改当前项目文件，把页面重做成更完整的产品落地页。
-```
-
-或者：
-
-```text
-请使用已连接的 MCP 工具帮我搜索 MiniMax MCP guide，并总结它提供了哪些能力。
-```
-
-### 什么时候用 skills，什么时候用 MCP
-
-- `skills` 更适合沉淀工作流、规范、领域经验
-- `MCP` 更适合接入搜索、图片理解、外部系统、数据库、浏览器、文件系统等远端能力
-
-一个常见组合是：
-
-- 用 `frontend-dev` 这类 skill 约束页面改造方式
-- 再让已连接的 MCP 提供搜索、图片理解或其他外部能力
-
-### 兼容性说明
-
-MiniCode 当前主要支持：
-
-- 本地 `SKILL.md` 发现与 `load_skill`
-- stdio MCP server
-- MCP tools
-- MCP resources / prompts 的通用 helper tools
-
-为了兼容不同厂商实现，MiniCode 会自动尝试：
-
-- 标准 `Content-Length` framing
-- 失败后回退到 `newline-json`
-
-所以像 MiniMax 这类采用按行 JSON 的 MCP server，也可以直接接入。
-
-## Star 趋势
-
-<p align="center">
-  <a href="https://star-history.com/#LiuMengxuan04/MiniCode&Date">
-    <img
-      alt="Star History Chart"
-      src="https://api.star-history.com/image?repos=LiuMengxuan04/MiniCode&style=landscape1"
-    />
-  </a>
-</p>
-
-## 通过 MiniCode 学习 Claude Code 设计
-
-如果你想把这个项目当成学习材料，可以继续阅读：
-
-- [通过 MiniCode 你可以学习到 Claude Code 的哪些设计](./CLAUDE_CODE_PATTERNS_ZH.md)
-
-## 项目结构
-
-- `src/index.ts`: CLI 入口
-- `src/agent-loop.ts`: 多步模型/工具循环
-- `src/tool.ts`: 工具注册与执行
-- `src/skills.ts`: 本地 skill 发现与加载
-- `src/mcp.ts`: stdio MCP 客户端与动态工具封装
-- `src/manage-cli.ts`: 顶层 `minicode mcp` / `minicode skills` 管理命令
-- `src/tools/*`: 内置工具集合
-- `src/tui/*`: 终端 UI 模块
-- `src/config.ts`: 运行时配置加载
-- `src/install.ts`: 交互式安装器
-
-## 架构文档
-
-- [Architecture Overview](./ARCHITECTURE.md)
-- [中文架构说明](./ARCHITECTURE_ZH.md)
-
-## 贡献规范
-
-- [中文贡献规范](./CONTRIBUTING_ZH.md)
-- [Contribution Guidelines](./CONTRIBUTING.md)
-
-## 路线图
-
-- [路线图（中文）](./ROADMAP_ZH.md)
-- [Roadmap](./ROADMAP.md)
-
-## 开发说明
-
-```bash
+npm install
 npm run check
 ```
 
-MiniCode 有意保持小而实用。目标是让整体架构足够清晰、易改造、易扩展。
+### 快速 smoke test
+
+```bash
+printf '/help\n/exit\n' | MINI_CODE_MODEL_MODE=mock go run ./cmd/minicode
+```
+
+### 交互里常用命令
+
+```text
+/help
+/tools
+/status
+/skills
+/mcp
+/model
+/permissions
+/exit
+```
+
+### 本地工具快捷命令
+
+```text
+/ls [path]
+/grep <pattern>::[path]
+/read <path>
+/write <path>::<content>
+/modify <path>::<content>
+/edit <path>::<search>::<replace>
+/patch <path>::<search1>::<replace1>::...
+/cmd [cwd::]<command> [args...]
+```
+
+## 整体架构
+
+可以把 Go 版看成几层协作的运行时：
+
+```mermaid
+flowchart TD
+  User["用户输入"] --> Main["cmd/minicode/main.go"]
+  Main --> Config["internal/config"]
+  Main --> Skills["internal/skills"]
+  Main --> MCP["internal/mcp"]
+  Main --> Tools["internal/tools"]
+  Main --> Prompt["internal/prompt"]
+  Main --> Session["internal/session"]
+  Session --> Agent["internal/agent"]
+  Agent --> Model["internal/model"]
+  Agent --> Tools
+  Tools --> Permissions["internal/permissions"]
+  Tools --> Review["internal/filereview"]
+  Session --> TUI["internal/tui"]
+  Session --> Store["session store"]
+```
+
+这套结构最重要的设计目标是让每一层只做一件事：
+
+- `cmd/minicode/main.go` 负责装配运行时
+- `config` 负责读取配置和环境变量
+- `session` 负责一次交互会话的生命周期
+- `agent` 负责多步推理和工具调用闭环
+- `model` 负责屏蔽不同 provider 的 API 差异
+- `tools` 负责统一工具协议、注册和执行
+- `permissions` 与 `filereview` 负责安全控制
+- `mcp` 负责把外部 server 动态接入为本地工具
+- `tui` 负责全屏终端交互层
+
+## 一次请求的完整流程
+
+### 启动阶段
+
+1. 解析命令行参数
+2. 判断是否是管理命令，比如 `install-local` 或 `sessions list`
+3. 加载运行时配置
+4. 发现本地 skills
+5. 注册内置工具
+6. 启动并接入 MCP servers
+7. 创建权限管理器
+8. 组装系统提示词
+9. 创建模型适配器
+10. 创建或恢复 session
+11. 判断是否进入 TUI
+
+### 单轮执行阶段
+
+1. 用户输入自然语言或 slash 命令
+2. session 追加 user message
+3. agent 调用模型生成下一步
+4. 如果模型要求调用工具，则执行工具
+5. 工具结果写回消息流
+6. agent 再次调用模型
+7. 重复直到得到 final answer 或需要澄清
+8. 输出结果并持久化 session
+
+用伪代码表示就是：
+
+```text
+append(user)
+loop:
+  step = model.next(messages, tools)
+  if step asks clarification:
+    stop and wait for user
+  if step has tool calls:
+    run tools
+    append(tool_result)
+    continue
+  if step is final:
+    output and save
+    break
+```
+
+## 项目结构
+
+```text
+MiniCode/
+├── cmd/minicode            # 程序入口
+├── internal/agent          # Agent loop
+├── internal/model          # Provider 适配
+├── internal/message        # 内部消息协议
+├── internal/tools          # 工具注册、校验、执行
+├── internal/permissions    # 路径与命令权限
+├── internal/filereview     # 写入前 diff review
+├── internal/session        # 会话生命周期与持久化
+├── internal/tui            # 全屏终端 UI
+├── internal/mcp            # MCP client 与动态工具包装
+├── internal/skills         # SKILL.md 发现与加载
+├── internal/config         # 配置加载
+├── internal/manage         # 管理命令
+├── internal/install        # 本地安装器
+├── src/                    # TS 版本参考实现
+├── docs/                   # 学习文档与展示资源
+└── README_GO.md            # Go 版深入文档
+```
+
+## 核心模块拆解
+
+### `internal/agent`
+
+这是系统的大脑。它负责：
+
+- 控制 `model -> tool -> model` 闭环
+- 判断当前输出是 progress、clarification 还是 final
+- 处理工具结果回灌
+- 处理空响应重试和部分中断恢复
+
+如果你想真正看懂“Coding Agent 是怎么跑起来的”，这里是最关键的阅读入口。
+
+### `internal/model`
+
+这一层负责把内部统一消息协议转换为具体 provider 的请求格式，再把 provider 返回结果解析回系统内部结构。
+
+它的价值在于隔离供应商差异，让 `agent` 始终只依赖统一接口，而不是依赖 Anthropic 或 OpenAI 的原生返回结构。
+
+### `internal/tools`
+
+这一层定义工具协议、参数 schema、工具注册、工具执行和错误返回格式。对 Agent 来说，工具不是散落的函数，而是一组统一可调度能力。
+
+### `internal/permissions` + `internal/filereview`
+
+这是 MiniCode 不只是 demo 的关键。项目没有让模型“想写就写、想跑就跑”，而是加了真实的边界：
+
+- 能不能访问某个路径
+- 命令是否危险
+- 写文件前是否需要 review
+- 用户是否显式允许这类操作
+
+### `internal/mcp`
+
+MCP 这一层负责与外部工具生态对接。它会启动 server、完成协议读写、管理请求超时，并把远端暴露的工具转换成当前会话里的本地可调用工具。
+
+### `internal/session` + `internal/tui`
+
+这两层共同组成用户能看到的产品表面：
+
+- session 管理消息流和持久化
+- TUI 负责输入、滚动、审批、折叠、渲染
+
+因此它们不是“UI 附件”，而是产品交互体验的一部分。
+
+## 当前仓库的阅读建议
+
+如果你是第一次看这个项目，推荐顺序如下：
+
+1. 先看 [README_GO.md](./README_GO.md) 形成整体概念
+2. 再看 [docs/LEARNING_GUIDE_ZH.md](./docs/LEARNING_GUIDE_ZH.md) 了解启动、测试和交互方式
+3. 然后从 [cmd/minicode/main.go](/Users/shengbo.sun/Documents/Codex/2026-05-21/https-github-com-ssbsunshengbo-minicode-git/MiniCode/cmd/minicode/main.go:1) 进入
+4. 接着读 [internal/agent/loop.go](/Users/shengbo.sun/Documents/Codex/2026-05-21/https-github-com-ssbsunshengbo-minicode-git/MiniCode/internal/agent/loop.go:1)
+5. 再读 `model`、`tools`、`permissions`、`mcp`、`session`
+6. 最后回头对照 `src/` 下 TS 版本看产品演化
+
+## 文档导航
+
+- [详细 Go 架构文档](./README_GO.md)
+- [MiniCode 学习指南](./docs/LEARNING_GUIDE_ZH.md)
+- [Architecture](./ARCHITECTURE.md)
+- [Roadmap](./ROADMAP.md)
+- [Contributing](./CONTRIBUTING.md)
+- [通过 MiniCode 学习 Claude Code 设计](./CLAUDE_CODE_PATTERNS.md)
+
+## 致谢与说明
+
+- 本仓库的 README 展示样式、Logo 与产品展示页资源参考并改编自 [LiuMengxuan04/MiniCode](https://github.com/LiuMengxuan04/MiniCode)。
+- 参考仓库使用 [MIT License](https://github.com/LiuMengxuan04/MiniCode/blob/main/LICENSE)，当前保留了相应的开源使用前提。
+- 当前仓库的重点是 Go 版本的完整实现与架构学习价值，而不是逐字复刻原始文案。
