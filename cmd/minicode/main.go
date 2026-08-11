@@ -19,6 +19,7 @@ import (
 )
 
 func main() {
+	// 错误处理
 	if err := run(context.Background(), os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
@@ -26,6 +27,7 @@ func main() {
 }
 
 func run(ctx context.Context, argv []string) error {
+	// 获取当前路径
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -34,24 +36,28 @@ func run(ctx context.Context, argv []string) error {
 	if err != nil {
 		return err
 	}
+	// 拦截命令
 	if out, handled, err := manage.Handle(ctx, cwd, startup.ManagementArgs); handled || err != nil {
 		if out != "" {
 			fmt.Println(out)
 		}
 		return err
 	}
-
+	// 加载配置
 	runtime, runtimeErr := config.LoadRuntime(cwd)
+	// 扫描skill
 	skillStore := skills.NewStore(cwd, homeDir())
 	discoveredSkills, _ := skillStore.Discover(ctx)
+	// 注册内置工具
 	toolRegistry := tools.Builtins(cwd, nil, skillStore)
+	// MCP servers
 	mcpResult := mcp.CreateBackedTools(ctx, cwd, runtime.MCPServers)
 	definitions := append(toolRegistry.List(), mcpResult.Tools...)
 	toolRegistry = tools.NewRegistry(definitions, tools.Metadata{Skills: discoveredSkills, MCPServers: mcpResult.Servers}).WithDisposer(mcpResult.Dispose)
 	defer func() {
 		_ = toolRegistry.Dispose(ctx)
 	}()
-
+	// 权限管理器，构建提示词
 	pm, _ := permissions.New(cwd, config.PermissionsPath(), nil)
 	systemPrompt := prompt.Build(ctx, prompt.Args{
 		CWD:               cwd,
@@ -59,7 +65,8 @@ func run(ctx context.Context, argv []string) error {
 		Skills:            discoveredSkills,
 		MCPServers:        toolRegistry.MCPServers(),
 	})
-
+	// fmt.Println(systemPrompt)
+	// 创建模型适配器
 	var adapter message.Model
 	mockMode := os.Getenv("MINI_CODE_MODEL_MODE") == "mock"
 	if mockMode {
@@ -73,6 +80,7 @@ func run(ctx context.Context, argv []string) error {
 		}
 	}
 
+	// 会话创建/恢复
 	store := session.Store{Dir: config.SessionsDir()}
 	sessionID := startup.ResumeID
 	messages := []message.Message{message.SystemMessage(systemPrompt)}
@@ -88,6 +96,7 @@ func run(ctx context.Context, argv []string) error {
 		sessionID = record.ID
 	}
 
+	// 启动会话
 	app := session.New(session.Args{
 		CWD:        cwd,
 		Tools:      toolRegistry,

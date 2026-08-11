@@ -55,6 +55,7 @@ func (s *Session) Run(ctx context.Context) error {
 		if input == "/exit" {
 			return nil
 		}
+		// 保存历史
 		if input != "" && (len(historyEntries) == 0 || historyEntries[len(historyEntries)-1] != input) {
 			historyEntries = append(historyEntries, input)
 			_ = s.args.History.Save(historyEntries)
@@ -182,6 +183,7 @@ func (s *Session) RunOnce(ctx context.Context, input string) error {
 		return nil
 	}
 
+	//
 	messages := append(s.args.Messages, message.UserMessage(input))
 	next, err := agent.RunTurn(ctx, agent.Args{
 		Model:      s.args.Model,
