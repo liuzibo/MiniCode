@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ssbsunshengbo/minicode-go/internal/agent"
 	"github.com/ssbsunshengbo/minicode-go/internal/commands"
@@ -50,6 +51,7 @@ type approvalState struct {
 }
 
 func (s *Session) RunTUI(ctx context.Context) error {
+	// TODO:分析
 	historyEntries, _ := s.args.History.Load()
 	state := tuiState{cursor: 0, nextEntryID: 1, history: historyEntries, historyIndex: len(historyEntries)}
 	if err := enterRawMode(); err != nil {
@@ -112,20 +114,23 @@ func (s *Session) handleTUIEvent(ctx context.Context, state *tuiState, event tui
 	}
 	if event.Kind == tui.EventKey && event.Name == tui.KeyBackspace {
 		if state.cursor > 0 {
-			state.input = state.input[:state.cursor-1] + state.input[state.cursor:]
-			state.cursor--
+			_, step := utf8.DecodeLastRuneInString(state.input[:state.cursor])
+			state.input = state.input[:state.cursor-step] + state.input[state.cursor:]
+			state.cursor -= step
 		}
 		return false, nil
 	}
 	if event.Kind == tui.EventKey && event.Name == tui.KeyLeft {
 		if state.cursor > 0 {
-			state.cursor--
+			_, step := utf8.DecodeLastRuneInString(state.input[:state.cursor])
+			state.cursor -= step
 		}
 		return false, nil
 	}
 	if event.Kind == tui.EventKey && event.Name == tui.KeyRight {
 		if state.cursor < len(state.input) {
-			state.cursor++
+			_, step := utf8.DecodeRuneInString(state.input[state.cursor:])
+			state.cursor += step
 		}
 		return false, nil
 	}
@@ -198,6 +203,7 @@ func (s *Session) handleTUIEvent(ctx context.Context, state *tuiState, event tui
 					state.transcript = append(state.transcript, transcriptEntry{kind: "assistant", body: strings.TrimSpace(out.String())})
 				}
 			} else {
+				// 入口
 				err = s.runAgentForTUI(ctx, state, input)
 			}
 			state.scroll = 0
@@ -348,11 +354,15 @@ func mapToolStatus(status string) tui.ToolStatus {
 }
 
 func enterRawMode() error {
-	return exec.Command("stty", "raw", "-echo").Run()
+	cmd := exec.Command("stty", "-icanon", "-echo", "-isig")
+	cmd.Stdin = os.Stdin
+	return cmd.Run()
 }
 
 func exitRawMode() {
-	_ = exec.Command("stty", "sane").Run()
+	cmd := exec.Command("stty", "sane")
+	cmd.Stdin = os.Stdin
+	_ = cmd.Run()
 }
 
 func terminalWidth() int {
@@ -366,7 +376,9 @@ func terminalHeight() int {
 }
 
 func terminalSize() (int, int) {
-	output, err := exec.Command("stty", "size").Output()
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	output, err := cmd.Output()
 	if err != nil {
 		return 100, 40
 	}

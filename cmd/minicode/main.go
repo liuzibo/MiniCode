@@ -65,7 +65,6 @@ func run(ctx context.Context, argv []string) error {
 		Skills:            discoveredSkills,
 		MCPServers:        toolRegistry.MCPServers(),
 	})
-	// fmt.Println(systemPrompt)
 	// 创建模型适配器
 	var adapter message.Model
 	mockMode := os.Getenv("MINI_CODE_MODEL_MODE") == "mock"
@@ -109,6 +108,7 @@ func run(ctx context.Context, argv []string) error {
 		SessionID:  sessionID,
 	})
 	if isTerminal(os.Stdin) && isTerminal(os.Stdout) {
+		fmt.Println("TUI MODE")
 		return app.RunTUI(ctx)
 	}
 	fmt.Println("MiniCode Go")

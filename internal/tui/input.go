@@ -37,6 +37,28 @@ func ParseInputChunk(previousRest string, chunk string) ParseResult {
 			}
 		}
 		ch := input[index]
+		if ch >= 0x80 {
+			seqLen := utf8SeqLen(ch)
+			if seqLen > 1 {
+				if index+seqLen > len(input) {
+					return ParseResult{Events: events, Rest: input[index:]}
+				}
+				valid := true
+				for i := 1; i < seqLen; i++ {
+					if input[index+i]&0xc0 != 0x80 {
+						valid = false
+						break
+					}
+				}
+				if valid {
+					events = append(events, InputEvent{Kind: EventText, Text: input[index : index+seqLen]})
+					index += seqLen
+					continue
+				}
+			}
+			index++
+			continue
+		}
 		switch {
 		case ch == '\r' || ch == '\n':
 			events = append(events, InputEvent{Kind: EventKey, Name: KeyReturn})
@@ -54,6 +76,23 @@ func ParseInputChunk(previousRest string, chunk string) ParseResult {
 		index++
 	}
 	return ParseResult{Events: events}
+}
+
+func utf8SeqLen(b byte) int {
+	switch {
+	case b < 0x80:
+		return 1
+	case b < 0xc0:
+		return -1
+	case b < 0xe0:
+		return 2
+	case b < 0xf0:
+		return 3
+	case b < 0xf8:
+		return 4
+	default:
+		return -1
+	}
 }
 
 func needMoreEscape(input string) bool {
